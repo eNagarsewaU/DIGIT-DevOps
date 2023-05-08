@@ -913,6 +913,8 @@ airflow:
   config:
     AIRFLOW__WEBSERVER__BASE_URL: "https://nagarsewa-uat.uk.gov.in/airflow"
     AIRFLOW__CORE__PLUGINS_FOLDER: "/opt/airflow/dags/repo/utilities/egov-national-dashboard-accelerator/plugins"
+externalDatabase: 
+  database: ukdprodbckp      
 dags:
    gitSync:
      repo:  "https://github.com/eNagarsewaU/DIGIT-UKD.git"
