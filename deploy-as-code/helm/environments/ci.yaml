@@ -35,9 +35,9 @@ cluster-configs:
       'git@github.com:eNagarsewaU/DIGIT-UKD.git','git@github.com:eNagarsewaU/ukd-rainmaker-customization.git'
 
   deploymentJobs:  
-    - name: ukd-uat
-      acl: [eNagarsewaU*ukd-uat]   
-    - name: ukd-prod
+    - name: ukd-uat-sdc
+      acl: [eNagarsewaU*ukd-uat]
+    - name: ukd-prod-sdc
       acl: [eNagarsewaU*ukd-prod] 
     
        
