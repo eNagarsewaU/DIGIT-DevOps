@@ -13,12 +13,13 @@ cluster-configs:
     appRoot: ""
     cert-issuer: "letsencrypt-prod"
 
-# jenkins:
-#   persistence:
-#     enabled: true
-#     aws:
-#       - volumeId: "vol-054ce663f9040ea17" # Add volume id for jenkins-home
-#         zone: ap-south-1b # Add respective availability_zones 
+  jenkins:
+    persistence:
+      enabled: true
+      iscsi:
+        targetPortal: 10.67.49.8:3260
+        iqn:
+        - iqn.2010-06.com.nutanix:volume-group-kubernetes-10.67.61.62-d5701540-6d14-477f-b586-f44ce8745f48-tgt0
 
   oauth:
     enabled: true
@@ -50,7 +51,6 @@ cluster-configs:
     javaOpts: "-Xms2560M -Xmx2560M -Duser.timezone=Asia/Calcutta"
 
 nginx-ingress:
-  replicas: 1
   default-backend-service: "jenkins/jenkins"
   namespace: jenkins
   cert-issuer: "letsencrypt-staging"
@@ -58,6 +58,7 @@ nginx-ingress:
   ssl-ciphers: "EECDH+CHACHA20:EECDH+AES"
   ssl-ecdh-curve: "X25519:prime256v1:secp521r1:secp384r1"
   controller:
+    replicas: 1
     image:
       repository: egovio/nginx-ingress-controller
       tag: "0.26.1"

@@ -163,11 +163,6 @@ master:
         secretKeyRef:
           name: jenkins-credentials
           key: gitReadSshPrivateKey
-    - name: SLACK_TOKEN
-      valueFrom:
-        secretKeyRef:
-          name: jenkins-credentials
-          key: slackToken   
   usePodSecurityContext: true
   # Set runAsUser to 1000 to let Jenkins run as non-root user 'jenkins' which exists in 'jenkins/jenkins' docker image.
   # When setting runAsUser to a different value than 0 also set fsGroup to the same value:
@@ -655,19 +650,21 @@ master:
     #     serviceName: ssl-redirect
     #     servicePort: use-annotation
     - backend:
-        serviceName: >-
-          {{ template "jenkins.fullname" . }}
-        # Don't use string here, use only integer value!
-        servicePort: 8080
+        service:
+          name: >-
+            {{ template "jenkins.fullname" . }}
+          # Don't use string here, use only integer value!
+          port:
+            number: 8080
+      pathType: ImplementationSpecific
     # For Kubernetes v1.14+, use 'networking.k8s.io/v1beta1'
-    apiVersion: "networking.k8s.io/v1beta1"
+    apiVersion: "networking.k8s.io/v1"
     labels: {}
     annotations: 
       kubernetes.io/ingress.class: "nginx"
       nginx.ingress.kubernetes.io/use-regex: "true" 
     # kubernetes.io/tls-acme: "true"
     # Set this path to jenkinsUriPrefix above or use annotations to rewrite path
-    path: "/"
     # configures the hostname e.g. jenkins.example.com
     # hostName: {{ .Values.global.domain }}
     # tls:
