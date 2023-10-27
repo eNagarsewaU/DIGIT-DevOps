@@ -416,7 +416,7 @@ master:
                   scm:
                     git:
                       credentialsId: "git_read"
-                      remote: "git@github.com:egovernments/CIOps.git"
+                      remote: "git@github.com:eNagarsewaU/CIOps.git"
                       traits:
                       - "gitBranchDiscovery"
       system-message: | 
