@@ -107,6 +107,8 @@ cluster-configs:
               
 egov-filestore:
   replicas: 1
+  memory_limits: 1Gi
+  heap: "-Xmx750m -Xms750m"
   volume: /opt/eGov/filestore
   is-nfs-enabled: true
   is-s3-enabled: false
