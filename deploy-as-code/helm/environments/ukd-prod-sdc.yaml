@@ -107,8 +107,8 @@ cluster-configs:
               
 egov-filestore:
   replicas: 1
-  memory_limits: 1Gi
-  heap: "-Xmx750m -Xms750m"
+  memory_limits: 1536Mi
+  heap: "-Xmx1024m -Xms1024m"
   volume: /opt/eGov/filestore
   is-nfs-enabled: true
   is-s3-enabled: false
@@ -715,6 +715,7 @@ egov-enc-service:
   state-level-tenant-id: "uk"
   # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
 kafka-v2:
   replicas: 3
   # DEPLOY VIA HELM
@@ -727,9 +728,9 @@ kafka-v2:
       - iqn.2010-06.com.nutanix:kubernete-production-f5f97b7d-e904-4a28-b57a-d88bef648b53-tgt21
       - iqn.2010-06.com.nutanix:kubernete-production-f5f97b7d-e904-4a28-b57a-d88bef648b53-tgt22
   zookeeperHosts: "zookeeper-v2.zookeeper-cluster:2181/kafka"
-
+  heap: "-Xmx750m -Xms750m"
   heapOptions: "-Xms704M -Xmx704M -XX:TieredStopAtLevel=1"
-  memory_limits: 1408Mi
+  memory_limits: 2048Mi
   lingerMs: "250"
   numberPartitions: "3"
   replicationFactor: "2"
@@ -874,7 +875,8 @@ kafka-v2-infra:
     - confluentinc/cp-kafka:5.2.2
   # Use chroot to reuse single zookeeper ensemble
   zookeeper-connect: "zookeeper-v2-headless.zookeeper-cluster:2181/kafka-infra"
-  heap: "-Xms704M -Xmx704M -XX:TieredStopAtLevel=1"
+  memory_limits: 1536Mi
+  heap: "-Xms1024M -Xmx1024M -XX:TieredStopAtLevel=1"
   offsets-topic-replication-factor: "3"
   linger-ms: "250"
   min-insync-replicas: "1"
