@@ -1,0 +1,865 @@
+---
+# Source: nginx-ingress/templates/controller-serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: nginx-ingress
+  name: nginx-ingress
+  namespace: jenkins
+---
+# Source: nginx-ingress/templates/controller-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: nginx-ingress
+  name: nginx-ingress-controller
+  namespace: jenkins
+data:
+  add-headers: jenkins/custom-headers
+  enable-vts-status: "false"
+  use-gzip: "true"
+  proxy-read-timeout: "60"  
+  client-max-body-size: "2m"
+  server-tokens: "false"
+  http-snippet: |
+     more_clear_headers Server;
+  ssl-ciphers: EECDH+CHACHA20:EECDH+AES
+  ssl-ecdh-curve: X25519:prime256v1:secp521r1:secp384r1
+  ssl-protocols: TLSv1.2 TLSv1.3
+---
+# Source: nginx-ingress/templates/custom-headers.yaml
+apiVersion: v1
+data:
+  Content-Security-Policy: "default-src 'self' https: 'unsafe-eval' 'unsafe-inline'; object-src 'none'; img-src 'self' https: data: blob:; style-src https: blob: 'unsafe-inline'; worker-src 'self' blob:; font-src 'self' https: data: blob:; child-src 'self' https: data: blob:;"
+  Referrer-Policy: "no-referrer-when-downgrade"
+  Strict-Transport-Security: "max-age=63072000; includeSubdomains; preload"
+  X-Content-Type-Options: "nosniff"
+  X-Download-Options: "noopen"
+  X-Frame-Options: "sameorigin"
+  X-XSS-Protection: "1"
+kind: ConfigMap
+metadata:
+  name: custom-headers
+  namespace: jenkins
+---
+# Source: nginx-ingress/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app: nginx-ingress
+  name: nginx-ingress
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - endpoints
+      - nodes
+      - pods
+      - secrets
+    verbs:
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - extensions
+      - "networking.k8s.io" # k8s 1.14+
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - extensions
+      - "networking.k8s.io" # k8s 1.14+
+    resources:
+      - ingresses/status
+    verbs:
+      - update
+---
+# Source: nginx-ingress/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app: nginx-ingress
+  name: nginx-ingress
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nginx-ingress
+subjects:
+  - kind: ServiceAccount
+    name: nginx-ingress
+    namespace: jenkins
+---
+# Source: nginx-ingress/templates/controller-role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app: nginx-ingress
+  name: nginx-ingress
+  namespace: jenkins    
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - pods
+      - secrets
+      - endpoints
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - extensions
+      - "networking.k8s.io" # k8s 1.14+
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - extensions
+      - "networking.k8s.io" # k8s 1.14+
+    resources:
+      - ingresses/status
+    verbs:
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    resourceNames:
+      - ingress-controller-leader-nginx
+    verbs:
+      - get
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - endpoints
+    verbs:
+      - create
+      - get
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+---
+# Source: nginx-ingress/templates/controller-rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app: nginx-ingress
+  name: nginx-ingress
+  namespace: jenkins  
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: nginx-ingress
+subjects:
+  - kind: ServiceAccount
+    name: nginx-ingress
+    namespace: jenkins
+---
+# Source: nginx-ingress/templates/controller-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nginx-ingress
+  name: nginx-ingress-controller
+  namespace: jenkins
+spec:
+  
+  externalTrafficPolicy: "Local"
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: http
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: https
+  selector:
+    app: nginx-ingress
+  type: "NodePort"
+---
+# Source: nginx-ingress/templates/controller-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx-ingress
+  name: nginx-ingress-controller
+  namespace: jenkins  
+  annotations:
+    {}
+spec:
+  selector:
+    matchLabels:
+      app: nginx-ingress
+  replicas: 1 
+  template:
+    metadata:
+      labels:
+        app: nginx-ingress
+    spec:
+      dnsPolicy: ClusterFirst
+      containers:
+        - name: nginx-ingress-controller
+          image: "egovio/nginx-ingress-controller:0.26.1"
+          imagePullPolicy: "IfNotPresent"
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - /wait-shutdown
+          args:
+            - /nginx-ingress-controller
+            - --election-id=ingress-controller-leader
+            - --ingress-class=nginx
+            - --configmap=jenkins/nginx-ingress-controller
+            - --enable-dynamic-certificates
+            - --enable-ssl-chain-completion=true
+          securityContext:
+            capabilities:
+                drop:
+                - ALL
+                add:
+                - NET_BIND_SERVICE
+            runAsUser: 33
+            allowPrivilegeEscalation: true
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 10254
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: https
+              containerPort: 443
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 10254
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            {}
+      hostNetwork: false
+      serviceAccountName: nginx-ingress
+      terminationGracePeriodSeconds: 60
+
+---
+# Source: jenkins/templates/service-account.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jenkins
+  namespace: jenkins
+  labels:
+    app: jenkins
+---
+# Source: jenkins/templates/config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins
+  namespace: jenkins
+  labels:
+    app: jenkins 
+data:
+  apply_config.sh: |-
+    echo "applying Jenkins configuration"
+    mkdir -p /usr/share/jenkins/ref/secrets/;
+    echo "disable Setup Wizard"
+    # Prevent Setup Wizard when JCasC is enabled
+    echo $JENKINS_VERSION > /var/jenkins_home/jenkins.install.UpgradeWizard.state
+    echo $JENKINS_VERSION > /var/jenkins_home/jenkins.install.InstallUtil.lastExecVersion
+    echo "finished initialization"
+---
+# Source: jenkins/templates/jcasc-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-jenkins-config-authorization-strategy
+  namespace: jenkins
+  labels:
+    app: jenkins
+    jenkins-jenkins-config: "true"
+data:
+  authorization-strategy.yaml: |-
+    jenkins:     
+      authorizationStrategy:loggedInUsersCanDoAnything:
+          allowAnonymousRead: false
+---
+# Source: jenkins/templates/jcasc-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-jenkins-config-disable-script-security
+  namespace: jenkins
+  labels:
+    app: jenkins
+    jenkins-jenkins-config: "true"
+data:
+  disable-script-security.yaml: |-
+    security:
+      globalJobDslSecurityConfiguration:
+        useScriptSecurity: false
+---
+# Source: jenkins/templates/jcasc-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-jenkins-config-git-credentials
+  namespace: jenkins
+  labels:
+    app: jenkins
+    jenkins-jenkins-config: "true"
+data:
+  git-credentials.yaml: |-
+    credentials:
+      system:
+        domainCredentials:
+          - credentials:
+              - basicSSHUserPrivateKey:
+                  scope: GLOBAL
+                  id: git_read
+                  description: "SSH private key file for git checkouts"
+                  privateKeySource:
+                    directEntry:
+                      privateKey: ${GIT_READ_SSH_PRIVATE_KEY}
+---
+# Source: jenkins/templates/jcasc-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-jenkins-config-global-libs
+  namespace: jenkins
+  labels:
+    app: jenkins
+    jenkins-jenkins-config: "true"
+data:
+  global-libs.yaml: |-
+    unclassified:
+      globalLibraries:
+        libraries:
+        - defaultVersion: "master"
+          name: "ci-libs"
+          retriever:
+            modernSCM:
+              scm:
+                git:
+                  credentialsId: "git_read"
+                  remote: "git@github.com:eNagarsewaU/CIOps.git"
+                  traits:
+                  - "gitBranchDiscovery"
+---
+# Source: jenkins/templates/jcasc-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-jenkins-config-security-realm
+  namespace: jenkins
+  labels:
+    app: jenkins
+    jenkins-jenkins-config: "true"
+data:
+  security-realm.yaml: |-
+    jenkins:
+      securityRealm:                
+        legacy
+---
+# Source: jenkins/templates/jcasc-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-jenkins-config-seed-deployment-jobs
+  namespace: jenkins
+  labels:
+    app: jenkins
+    jenkins-jenkins-config: "true"
+data:
+  seed-deployment-jobs.yaml: |-
+    jobs:
+      - script: >
+          folder("deployments")
+---
+# Source: jenkins/templates/jcasc-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-jenkins-config-seed-job-builder
+  namespace: jenkins
+  labels:
+    app: jenkins
+    jenkins-jenkins-config: "true"
+data:
+  seed-job-builder.yaml: |-
+    jobs:
+      - script: >
+          pipelineJob("Job Builder") {
+              logRotator(-1, 5, -1, -1)
+              definition {
+                  cps {
+                    script("""
+                    library 'ci-libs'
+    
+                    jobBuilder(urls: ['git@github.com:egovernments/core-services.git','git@github.com:egovernments/business-services.git'])
+                    """)
+                  }
+              }
+          }
+---
+# Source: jenkins/templates/jcasc-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-jenkins-config-system-message
+  namespace: jenkins
+  labels:
+    app: jenkins
+    jenkins-jenkins-config: "true"
+data:
+  system-message.yaml: |-
+    jenkins:                                
+      systemMessage: "Welcome to EGOV CI CD server.  This Jenkins is configured and managed as code."
+---
+# Source: jenkins/templates/jcasc-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-jenkins-jcasc-config
+  namespace: jenkins
+  labels:
+    app: jenkins 
+    jenkins-jenkins-config: "true"
+data:
+  jcasc-default-config.yaml: |-
+    jenkins:
+      disableRememberMe: false
+      remotingSecurity:
+        enabled: true
+      mode: NORMAL
+      numExecutors: 0
+      projectNamingStrategy: "standard"
+      markupFormatter:
+        plainText
+      clouds:
+      - kubernetes:
+          containerCapStr: "10"
+          defaultsProviderTemplate: ""
+          connectTimeout: "5"
+          readTimeout: "15"
+          jenkinsUrl: "http://jenkins:8080"
+          jenkinsTunnel: "jenkins-agent:50000"
+          maxRequestsPerHostStr: "32"
+          name: "kubernetes"
+          namespace: "jenkins"
+          serverUrl: "https://kubernetes.default"
+          podLabels:
+          - key: "jenkins/jenkins-jenkins-slave"
+            value: "true"
+          templates:
+            - name: "default"
+              containers:
+              - name: "jnlp"
+                alwaysPullImage: false
+                args: "^${computer.jnlpmac} ^${computer.name}"
+                envVars:
+                - containerEnvVar:
+                    key: "JENKINS_URL"
+                    value: "http://jenkins.jenkins.svc.cluster.local:8080"
+                image: "jenkins/inbound-agent:4.3-4-alpine"
+                privileged: "false"
+                resourceLimitCpu: 512m
+                resourceLimitMemory: 512Mi
+                resourceRequestCpu: 512m
+                resourceRequestMemory: 512Mi
+                runAsUser: 
+                runAsGroup: 
+                ttyEnabled: false
+                workingDir: /home/jenkins
+              idleMinutes: 0
+              instanceCap: 2147483647
+              label: "jenkins-jenkins-slave "
+              nodeUsageMode: "NORMAL"
+              podRetention: OnFailure
+              showRawYaml: true
+              serviceAccount: "default"
+              slaveConnectTimeoutStr: "100"
+              yamlMergeStrategy: override
+      crumbIssuer:
+        standard:
+          excludeClientIPFromCrumb: true
+    security:
+      apiToken:
+        creationOfLegacyTokenEnabled: false
+        tokenGenerationOnCreationEnabled: false
+        usageStatisticsEnabled: true
+    unclassified:
+      location:
+        adminAddress: 
+        url: http://jenkins:8080
+---
+# Source: jenkins/templates/home-pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: jenkins
+  namespace: jenkins
+  labels:
+    app: jenkins 
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "50Gi"
+---
+# Source: jenkins/templates/rbac.yaml
+# This role is used to allow Jenkins scheduling of agents via Kubernetes plugin.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: jenkins-schedule-agents
+  namespace: jenkins
+  labels:
+    app: jenkins 
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/exec", "pods/log", "persistentvolumeclaims", "events"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods", "pods/exec", "persistentvolumeclaims"]
+  verbs: ["create", "delete", "deletecollection", "patch", "update"]
+---
+# Source: jenkins/templates/rbac.yaml
+# The sidecar container which is responsible for reloading configuration changes
+# needs permissions to watch ConfigMaps
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: jenkins-casc-reload
+  namespace: jenkins
+  labels:
+    app: jenkins 
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "watch", "list"]
+---
+# Source: jenkins/templates/rbac.yaml
+# We bind the role to the Jenkins service account. The role binding is created in the namespace
+# where the agents are supposed to run.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: jenkins-schedule-agents
+  namespace: jenkins
+  labels:
+    app: jenkins 
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: jenkins-schedule-agents
+subjects:
+- kind: ServiceAccount
+  name: jenkins
+  namespace: jenkins
+---
+# Source: jenkins/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: jenkins-watch-configmaps
+  namespace: jenkins
+  labels:
+    app: jenkins 
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: jenkins-casc-reload
+subjects:
+- kind: ServiceAccount
+  name: jenkins
+  namespace: jenkins
+---
+# Source: jenkins/templates/jenkins-agent-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-agent
+  namespace: jenkins
+  labels:
+    app: jenkins
+spec:
+  ports:
+    - port: 50000
+      targetPort: 50000
+      
+      name: slavelistener
+  selector:
+    app: jenkins 
+  type: ClusterIP
+---
+# Source: jenkins/templates/jenkins-master-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins
+  namespace: jenkins
+  labels:
+    app: jenkins
+spec:
+  ports:
+    - port: 8080
+      name: http
+      targetPort: 8080
+  selector:
+    app: jenkins 
+  type: ClusterIP
+---
+# Source: jenkins/templates/jenkins-master-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+  namespace: jenkins
+  labels:
+    app: jenkins
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: jenkins 
+  template:
+    metadata:
+      labels:
+        app: jenkins
+      annotations:
+        checksum/config: df5923ca92e2c8c7e88a07b90de7cf851f74a1924feb9490afd864a0f536db9e
+    spec:
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      serviceAccountName: "jenkins"
+      initContainers:
+        - name: "copy-default-config"
+          image: "nithindv/jenkins:2.242-alpine"
+          imagePullPolicy: "IfNotPresent"
+          command: [ "sh", "/var/jenkins_config/apply_config.sh" ]
+          env:
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1024Mi
+            requests:
+              cpu: 50m
+              memory: 256Mi
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+            - mountPath: /var/jenkins_home
+              name: jenkins-home
+            - mountPath: /var/jenkins_config
+              name: jenkins-config
+      containers:
+        - name: jenkins
+          image: "nithindv/jenkins:2.242-alpine"
+          imagePullPolicy: "IfNotPresent"
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: JAVA_OPTS
+              value: >
+                -Xms512M -Xmx512M -Duser.timezone=Asia/Calcutta
+                 -Dcasc.reload.token=$(POD_NAME) 
+            - name: JENKINS_OPTS
+              value: ""
+            - name: JENKINS_SLAVE_AGENT_PORT
+              value: "50000"
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: clientID
+                  name: jenkins-credentials
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: clientSecret
+                  name: jenkins-credentials
+            - name: GIT_READ_SSH_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: gitReadSshPrivateKey
+                  name: jenkins-credentials
+            - name: CASC_JENKINS_CONFIG
+              value: /var/jenkins_home/casc_configs
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 50000
+              name: slavelistener
+          livenessProbe:
+            httpGet:
+              path: "/login"
+              port: http
+            initialDelaySeconds: 90
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: "/login"
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1024Mi
+            requests:
+              cpu: 50m
+              memory: 256Mi
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+            - mountPath: /var/jenkins_home
+              name: jenkins-home
+              readOnly: false
+            - mountPath: /var/jenkins_config
+              name: jenkins-config
+              readOnly: true
+            - name: sc-config-volume
+              mountPath: /var/jenkins_home/casc_configs
+        - name: jenkins-sc-config
+          image: "kiwigrid/k8s-sidecar:0.1.193"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: LABEL
+              value: "jenkins-jenkins-config"
+            - name: FOLDER
+              value: "/var/jenkins_home/casc_configs"
+            - name: METHOD
+              value: "SLEEP"   
+            - name: NAMESPACE
+              value: "jenkins"
+            - name: REQ_URL
+              value: "http://localhost:8080/reload-configuration-as-code/?casc-reload-token=$(POD_NAME)"
+            - name: REQ_METHOD
+              value: "POST"
+            - name: REQ_RETRY_CONNECT
+              value: "10"
+          resources:
+            {}
+          volumeMounts:
+            - name: sc-config-volume
+              mountPath: "/var/jenkins_home/casc_configs"
+            - name: jenkins-home
+              mountPath: /var/jenkins_home
+
+      volumes:
+      - name: plugins
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+      - name: jenkins-config
+        configMap:
+          name: jenkins
+      - name: jenkins-home
+        persistentVolumeClaim:
+          claimName: jenkins
+      - name: sc-config-volume
+        emptyDir: {}
+
