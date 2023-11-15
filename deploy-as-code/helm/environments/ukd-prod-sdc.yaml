@@ -107,6 +107,8 @@ cluster-configs:
               
 egov-filestore:
   replicas: 1
+  memory_limits: 1536Mi
+  heap: "-Xmx1024m -Xms1024m"
   volume: /opt/eGov/filestore
   is-nfs-enabled: true
   is-s3-enabled: false
@@ -178,7 +180,7 @@ egov-otp:
   
 egov-user:
   replicas: 3
-  heap: "-Xmx1300m -Xms1300m -XX:TieredStopAtLevel=1"
+  heap: "-Xmx1300m -Xms1300m -XX:TieredStopAtLevel=1 -server -XX:+UseG1GC -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:garbage_collection.log"
   memory_limits: 1400Mi
   otp-validation: "true"
   citizen-otp-enabled: "true"
@@ -246,6 +248,7 @@ egov-persister:
     gitSync:
         repo: "git@github.com:eNagarsewa/ukd-rainmaker-customization"
         branch: "master"
+  heap: "-Xmx512m -Xms512m -XX:TieredStopAtLevel=1 -server -XX:+UseG1GC -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:garbage_collection.log"
   java-args: "-Dspring.profiles.active=production"
         
         
@@ -403,6 +406,7 @@ zuul:
 collection-services:
   replicas: 3
   receiptnumber-servicebased: "false"
+  heap: "-Xmx512m -Xms512m -XX:TieredStopAtLevel=1 -server -XX:+UseG1GC -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:garbage_collection.log"
   java-args: "-Dspring.profiles.active=production"
   server-tomcat-max-threads: "25"
   server-tomcat-max-connections: "1500"
@@ -411,7 +415,7 @@ collection-services:
   
 billing-service:
   replicas: 3
-  heap: "-Xmx400m -Xms400m -XX:TieredStopAtLevel=1"	
+  heap: "-Xmx400m -Xms400m -XX:TieredStopAtLevel=1 -server -XX:+UseG1GC -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:garbage_collection.log"
   java-args: "-Dspring.profiles.active=production"	
   server-tomcat-max-threads: "30"	
   server-tomcat-max-connections: "1500"	
@@ -505,7 +509,7 @@ rainmaker-pgr:
 
 pt-services-v2:
   replicas: 2
-  heap: "-Xmx384m -Xms384m -XX:TieredStopAtLevel=1"
+  heap: "-Xmx384m -Xms384m -XX:TieredStopAtLevel=1 -server -XX:+UseG1GC -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:garbage_collection.log"
   resources: |
     limits:
       cpu: 500m
@@ -520,14 +524,14 @@ pt-services-v2:
 
 property-services:
   replicas: 3
-  heap: "-Xmx1024m -Xms1024m -XX:TieredStopAtLevel=1"
+  heap: "-Xmx1024m -Xms1024m -XX:TieredStopAtLevel=1 -server -XX:+UseG1GC -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:garbage_collection.log"
   resources: |
     limits:
       cpu: 500m
-      memory: 786Mi
+      memory: 1100Mi
     requests:
       cpu: 500m
-      memory: 786Mi   
+      memory: 1100Mi
   employee-allowed-search-params: accountId,ids,propertyDetailids,mobileNumber,oldpropertyids,doorNo,locality,name
   citizen-allowed-search-params: accountId,ids,propertyDetailids,mobileNumber,oldpropertyids,doorNo,locality,name
   notification-sms-enabled: "false"
@@ -538,6 +542,7 @@ property-services:
 
 pt-calculator-v2:
   replicas: 3
+  heap: "-Xmx512m -Xms512m -XX:TieredStopAtLevel=1 -server -XX:+UseG1GC -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:garbage_collection.log"
   java-args: "-Dspring.profiles.active=production"
   server-tomcat-max-threads: "20"
   server-tomcat-max-connections: "1500"
@@ -581,7 +586,7 @@ egov-workflow-v2:
   replicas: 2
   memory_limits: 756Mi
   java-args: -Dspring.profiles.active=production
-  heap: "-Xmx512m -Xms512m -XX:TieredStopAtLevel=1"
+  heap: "-Xmx512m -Xms512m -XX:TieredStopAtLevel=1 -server -XX:+UseG1GC -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:garbage_collection.log"
   server-tomcat-max-threads: "35"
   server-tomcat-max-connections: "2500"
   spring-datasource-tomcat-max-active: "25"
@@ -595,6 +600,7 @@ egov-hrms:
   
 echallan-services:
   replicas: 2
+  heap: "-Xmx512m -Xms512m -XX:TieredStopAtLevel=1 -server -XX:+UseG1GC -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -Xloggc:garbage_collection.log"
   egov-idgen-challanNum-format: "UK-CH-[cy:yyyy-MM-dd]-[SEQ_EG_CH_APL]"
 
 egov-weekly-impact-notifier:
@@ -713,6 +719,7 @@ egov-enc-service:
   state-level-tenant-id: "uk"
   # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
 kafka-v2:
   replicas: 3
   # DEPLOY VIA HELM
@@ -725,9 +732,9 @@ kafka-v2:
       - iqn.2010-06.com.nutanix:kubernete-production-f5f97b7d-e904-4a28-b57a-d88bef648b53-tgt21
       - iqn.2010-06.com.nutanix:kubernete-production-f5f97b7d-e904-4a28-b57a-d88bef648b53-tgt22
   zookeeperHosts: "zookeeper-v2.zookeeper-cluster:2181/kafka"
-
+  heap: "-Xmx750m -Xms750m"
   heapOptions: "-Xms704M -Xmx704M -XX:TieredStopAtLevel=1"
-  memory_limits: 1408Mi
+  memory_limits: 2048Mi
   lingerMs: "250"
   numberPartitions: "3"
   replicationFactor: "2"
@@ -872,7 +879,8 @@ kafka-v2-infra:
     - confluentinc/cp-kafka:5.2.2
   # Use chroot to reuse single zookeeper ensemble
   zookeeper-connect: "zookeeper-v2-headless.zookeeper-cluster:2181/kafka-infra"
-  heap: "-Xms704M -Xmx704M -XX:TieredStopAtLevel=1"
+  memory_limits: 1536Mi
+  heap: "-Xms1024M -Xmx1024M -XX:TieredStopAtLevel=1"
   offsets-topic-replication-factor: "3"
   linger-ms: "250"
   min-insync-replicas: "1"
