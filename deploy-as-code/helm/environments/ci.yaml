@@ -1,5 +1,5 @@
 global:
-  domain: nagarsewa-jenkins.uk.gov.in ## Add your Domain Name Eg: site.mydomain.com
+  domain: nagarsewa-jenkins.uk.gov.in #Add your Domain Name Eg: site.mydomain.com
   setup: fullsetup
   
 cluster-configs:
@@ -13,13 +13,13 @@ cluster-configs:
     appRoot: ""
     cert-issuer: "letsencrypt-prod"
 
-  jenkins:
-    persistence:
-      enabled: true
-      iscsi:
-        targetPortal: 10.67.49.8:3260
-        iqn:
-        - iqn.2010-06.com.nutanix:volume-group-kubernetes-10.67.61.62-d5701540-6d14-477f-b586-f44ce8745f48-tgt0
+jenkins:
+  persistence:
+    enabled: true
+    iscsi:
+      targetPortal: 10.67.49.8:3260
+      iqn:
+      - iqn.2010-06.com.nutanix:volume-group-kubernetes-10.67.61.62-d5701540-6d14-477f-b586-f44ce8745f48-tgt0
 
   oauth:
     enabled: true
@@ -28,7 +28,6 @@ cluster-configs:
         - eNagarsewaU*UKD-service-devops
       user:
         - eNagarsewaU*ukd-dev
-       
 
   jobBuilder:
     repos: >-
@@ -59,9 +58,6 @@ nginx-ingress:
   ssl-ecdh-curve: "X25519:prime256v1:secp521r1:secp384r1"
   controller:
     replicas: 1
-    image:
-      repository: egovio/nginx-ingress-controller
-      tag: "0.26.1"
 
 cert-manager:
   namespace: jenkins
