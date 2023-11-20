@@ -1,12 +1,15 @@
-{{- $serviceName := include "nginx-ingress.name" . -}}
 {{- if .Values.rbac.create -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
-    app: {{ template "nginx-ingress.name" . }}
-  name: {{ template "nginx-ingress.fullname" . }}
-  namespace: {{ .Values.namespace }}    
+    {{- include "nginx-ingress.labels" . | nindent 4 }}
+    app.kubernetes.io/component: controller
+    {{- with .Values.controller.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  name: {{ include "nginx-ingress.fullname" . }}
+  namespace: {{ .Values.namespace }}
 rules:
   - apiGroups:
       - ""
@@ -32,11 +35,9 @@ rules:
     verbs:
       - get
       - list
-      - update
       - watch
   - apiGroups:
-      - extensions
-      - "networking.k8s.io" # k8s 1.14+
+      - networking.k8s.io
     resources:
       - ingresses
     verbs:
@@ -44,35 +45,34 @@ rules:
       - list
       - watch
   - apiGroups:
-      - extensions
-      - "networking.k8s.io" # k8s 1.14+
+      - networking.k8s.io
     resources:
       - ingresses/status
     verbs:
       - update
   - apiGroups:
-      - ""
+      - networking.k8s.io
     resources:
-      - configmaps
+      - ingressclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
     resourceNames:
-      - {{ .Values.controller.electionID }}-{{ .Values.controller.ingressClass }}
+      - {{ include "nginx-ingress.controller.electionID" . }}
     verbs:
       - get
       - update
   - apiGroups:
-      - ""
+      - coordination.k8s.io
     resources:
-      - configmaps
+      - leases
     verbs:
       - create
-  - apiGroups:
-      - ""
-    resources:
-      - endpoints
-    verbs:
-      - create
-      - get
-      - update
   - apiGroups:
       - ""
     resources:
@@ -80,11 +80,22 @@ rules:
     verbs:
       - create
       - patch
+  - apiGroups:
+      - discovery.k8s.io
+    resources:
+      - endpointslices
+    verbs:
+      - list
+      - watch
+      - get
 {{- if .Values.podSecurityPolicy.enabled }}
-  - apiGroups:      ['{{ template "podSecurityPolicy.apiGroup" . }}']
+  - apiGroups:      [{{ template "podSecurityPolicy.apiGroup" . }}]
     resources:      ['podsecuritypolicies']
     verbs:          ['use']
-    resourceNames:  [{{ template "nginx-ingress.fullname" . }}]
+    {{- with .Values.controller.existingPsp }}
+    resourceNames:  [{{ . }}]
+    {{- else }}
+    resourceNames:  [{{ include "nginx-ingress.fullname" . }}]
+    {{- end }}
 {{- end }}
-
-{{- end -}}
+{{- end }}
