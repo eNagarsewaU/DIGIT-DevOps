@@ -250,8 +250,7 @@ service:
 
 serviceMonitor:
   honorLabels: true
-  # interval: 2m
-  interval: 30s
+  interval: 15s
 
 cron:
   namespace: egov
