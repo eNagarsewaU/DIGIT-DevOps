@@ -513,14 +513,14 @@ rainmaker-pgr:
 
 pt-services-v2:
   replicas: 2
-  heap: "-Xmx650m -Xms650m -Xmn530m -XX:TieredStopAtLevel=1 -server -XX:+UseG1GC"
+  heap: "-Xmx950m -Xms850m -Xmn530m -XX:TieredStopAtLevel=1 -server -XX:+UseG1GC"
   resources: |
     limits:
-      cpu: 500m
-      memory: 750Mi
+      cpu: 700m
+      memory: 1050Mi
     requests:
-      cpu: 500m
-      memory: 750Mi
+      cpu: 700m
+      memory: 1050Mi
   employee-allowed-search-params: accountId,ids,propertyDetailids,mobileNumber,oldpropertyids,doorNo,locality
   citizen-allowed-search-params: accountId,ids,propertyDetailids,mobileNumber,oldpropertyids,doorNo,locality
   notification-sms-enabled: "true"
