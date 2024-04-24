@@ -721,6 +721,8 @@ pgadmin-config:
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 egov-enc-service:
   replicas: 2
+  memory_limits: 512Mi
+  heap: "-Xmx400m -Xms400m"
   java-args: -Dspring.profiles.active=production
   state-level-tenant-id: "uk"
   # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
