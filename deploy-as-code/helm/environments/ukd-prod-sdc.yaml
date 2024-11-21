@@ -234,7 +234,7 @@ egov-mdms-service:
 egov-indexer:
   replicas: 2
   heap: "-Xmx1900m -Xms1900m -Xmn1700m -XX:TieredStopAtLevel=1 -server -XX:+UseG1GC"
-  memory_limits: "2150Mi"
+  memory_limits: "3072Mi"
   initContainers:
     gitSync:
         repo: "git@github.com:eNagarsewa/ukd-rainmaker-customization"
