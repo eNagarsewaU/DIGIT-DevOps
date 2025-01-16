@@ -9,7 +9,9 @@ initContainers:
     enabled: true
     schemaTable: "egov_filestore_schema"
     image:
-      repository: "egov-filestore-db"
+      repository: "egovio/egov-filestore-db"
+      tag: "latest"
+      pullPolicy: IfNotPresent
 
 # Ingress Configs
 ingress:
