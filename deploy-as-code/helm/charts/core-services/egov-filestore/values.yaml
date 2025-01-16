@@ -19,6 +19,8 @@ ingress:
 # Container Configs
 image:
   repository: "egovio/egov-filestore"
+  tag: "latest"
+  pullPolicy: IfNotPresent
 replicas: "1"
 healthChecks:
   enabled: true
